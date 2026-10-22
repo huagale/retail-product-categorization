@@ -1,5 +1,3 @@
--- первая версия правил по названию товара
--- mysql, база my_project
 
 -- 1. правила и их порядок
 create or replace view my_project.footwear_rules_v1 as
@@ -37,9 +35,7 @@ select
 from my_project.flipkart_com_ecommerce_sample
 where product_category_tree like '["Footwear >> Women''s Footwear >> %'
    or product_category_tree like '["Footwear >> Men''s Footwear >> %';
-
--- вывод: правила ищут слова только в product_name. исходное дерево задает область проекта и помогает разбирать результат.
--- вывод: case выбирает первое подходящее условие: например, sandals проверяется раньше sports shoes, а boots — раньше casual shoes.
+-- case выбирает первое подходящее условие: например, sandals проверяется раньше sports shoes, а boots — раньше casual shoes.
 
 -- 2. охват первой версии
 select
@@ -48,8 +44,7 @@ select
     count(*) - count(predicted_type) as without_label,
     round(100.0 * count(predicted_type) / nullif(count(*), 0), 2) as coverage_pct
 from my_project.footwear_rules_v1;
-
--- вывод: первая версия разметила 1 009 из 1 121 товаров. охват — 90,01%, без метки осталось 112 товаров.
+-- первая версия разметила 1 009 из 1 121 товаров. охват — 90,01%, без метки осталось 112 товаров.
 
 -- 3. распределение первых меток
 select coalesce(predicted_type, 'без правила') as predicted_type,
@@ -58,8 +53,8 @@ from my_project.footwear_rules_v1
 group by predicted_type
 order by products desc, predicted_type;
 
--- вывод: самая большая группа — casual shoes: 238 товаров. в нее пока входят и лоферы.
--- вывод: это повод проверить, стоит ли выделить более конкретный тип.
+-- самая большая группа — casual shoes: 238 товаров. в нее пока входят и лоферы.
+-- это повод проверить, стоит ли выделить более конкретный тип.
 
 -- 4. товары без подходящего правила
 select product_name, source_group, source_type, count(*) as products
@@ -69,8 +64,8 @@ group by product_name, source_group, source_type
 order by products desc, product_name, source_group, source_type
 limit 30;
 
--- вывод: среди пропусков есть slip on, lace up, canvas shoes и крем для обуви.
--- вывод: для canvas shoes и средства ухода можно добавить отдельные правила. slip on и lace up сами по себе не дают нужной подкатегории.
+-- среди пропусков есть slip on, lace up, canvas shoes и крем для обуви.
+-- для canvas shoes и средства ухода можно добавить отдельные правила. slip on и lace up сами по себе не дают нужной подкатегории.
 
 -- 5. почему boots нельзя проверять только по третьему уровню
 select product_category_tree, count(*) as products
@@ -80,5 +75,5 @@ group by product_category_tree
 order by products desc, product_category_tree
 limit 15;
 
--- вывод: в исходных данных встречается путь casual shoes → boots.
--- вывод: метка boots подробнее, чем casual shoes, поэтому такое отличие не записываю в ошибки алгоритма.
+-- в исходных данных встречается путь casual shoes -> boots.
+-- метка boots подробнее, чем casual shoes, поэтому такое отличие не записываю в ошибки алгоритма.
